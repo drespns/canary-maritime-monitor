@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Las Palmas de Gran Canaria",
+    "lat": 28.1447,
+    "lon": -15.4167
+  },
+  {
+    "name": "Santa Cruz de Tenerife",
+    "lat": 28.4604,
+    "lon": -16.2502
+  },
+  {
+    "name": "Arrecife (Lanzarote)",
+    "lat": 28.963,
+    "lon": -13.5477
+  },
+  {
+    "name": "Puerto del Rosario (Fuerteventura)",
+    "lat": 28.4997,
+    "lon": -13.8629
+  },
+  {
+    "name": "Santa Cruz de La Palma",
+    "lat": 28.6829,
+    "lon": -17.7649
+  },
+  {
+    "name": "San Sebastián de La Gomera",
+    "lat": 28.0897,
+    "lon": -17.1133
+  },
+  {
+    "name": "Los Cristianos / Puerto colindante",
+    "lat": 28.054,
+    "lon": -16.716
+  },
+  {
+    "name": "Puerto de Mogán",
+    "lat": 27.817,
+    "lon": -15.764
+  }
+]
