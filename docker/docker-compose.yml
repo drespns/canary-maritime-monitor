@@ -91,7 +91,8 @@ services:
       # Forzar rutas Ivy escribibles para --packages.
       SPARK_SUBMIT_OPTS: "-Divy.home=/tmp/.ivy2 -Divy.cache.dir=/tmp/.ivy2/cache"
       # InfluxDB sink.
-      INFLUXDB_URL: http://influxdb:8086
+      # Local: http://influxdb:8086 · Cloud: https://… (definir INFLUXDB_URL en docker/.env)
+      INFLUXDB_URL: ${INFLUXDB_URL:-http://influxdb:8086}
       INFLUX_ORG: ${INFLUX_ORG}
       INFLUX_BUCKET: ${INFLUX_BUCKET}
       INFLUX_ADMIN_TOKEN: ${INFLUX_ADMIN_TOKEN}
@@ -119,7 +120,7 @@ services:
     ports:
       - "3001:3000"
     environment:
-      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_URL: ${INFLUXDB_URL:-http://influxdb:8086}
       INFLUX_ORG: ${INFLUX_ORG}
       INFLUX_BUCKET: ${INFLUX_BUCKET}
       INFLUX_ADMIN_TOKEN: ${INFLUX_ADMIN_TOKEN}
