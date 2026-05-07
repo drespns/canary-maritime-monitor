@@ -1,4 +1,4 @@
-﻿import type { FastestShipEntry, PipelineMetrics, ShipSnapshot } from "@/lib/pipeline-metrics";
+import type { FastestShipEntry, PipelineMetrics, ShipSnapshot } from "@/lib/pipeline-metrics";
 
 export type MetricsResponse = PipelineMetrics & {
   generatedAt?: string;
@@ -12,8 +12,11 @@ export type FleetFiltersProps = {
   searchQuery: string;
   portFilter: string;
   portOptions: string[];
+  hideStopped: boolean;
+  stoppedThresholdKnots: number;
   onSearchChange: (value: string) => void;
   onPortChange: (value: string) => void;
+  onToggleHideStopped: () => void;
 };
 
 export type FleetTableProps = {

@@ -1,11 +1,14 @@
-﻿import type { FleetFiltersProps } from "@/components/dashboard/types";
+import type { FleetFiltersProps } from "@/components/dashboard/types";
 
 export default function FleetFilters({
   searchQuery,
   portFilter,
   portOptions,
+  hideStopped,
+  stoppedThresholdKnots,
   onSearchChange,
   onPortChange,
+  onToggleHideStopped,
 }: FleetFiltersProps) {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/45 p-4 backdrop-blur-sm">
@@ -31,6 +34,23 @@ export default function FleetFilters({
             </option>
           ))}
         </select>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-950/35 px-3 py-2">
+        <div className="text-xs text-slate-300">
+          <span className="font-medium text-slate-100">Ocultar parados</span>
+          <span className="ml-2 text-[11px] text-slate-500">SOG &lt; {stoppedThresholdKnots.toFixed(1)} kn</span>
+        </div>
+        <button
+          type="button"
+          onClick={onToggleHideStopped}
+          className={`rounded-md border px-2 py-1 text-xs transition ${
+            hideStopped
+              ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100"
+              : "border-white/15 text-slate-300 hover:bg-white/10"
+          }`}
+        >
+          {hideStopped ? "Activo" : "Inactivo"}
+        </button>
       </div>
     </div>
   );

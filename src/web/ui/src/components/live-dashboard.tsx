@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ShipMap from "@/components/ship-map";
@@ -32,6 +32,7 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
   const [selectedMmsi, setSelectedMmsi] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [portFilter, setPortFilter] = useState<string>("__all__");
+  const [hideStopped, setHideStopped] = useState(true);
   const [showTracks, setShowTracks] = useState(true);
   const [trackDepth, setTrackDepth] = useState(5);
   const [readmeModalOpen, setReadmeModalOpen] = useState(false);
@@ -84,16 +85,29 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
 
   const filteredShips = useMemo(() => {
     const q = normalize(searchQuery);
+    const threshold = Number.isFinite(metrics.stoppedThresholdKnots)
+      ? metrics.stoppedThresholdKnots
+      : 0.6;
     return metrics.ships.filter((s) => {
       if (portFilter !== "__all__" && s.nearestPortName !== portFilter) {
         return false;
+      }
+      if (hideStopped) {
+        const sog = s.sog ?? 0;
+        if (sog < threshold) return false;
       }
       if (!q) return true;
       const name = normalize(s.shipName ?? "");
       const mmsi = normalize(s.mmsi ?? "");
       return name.includes(q) || mmsi.includes(q);
     });
-  }, [metrics.ships, portFilter, searchQuery]);
+  }, [
+    metrics.ships,
+    metrics.stoppedThresholdKnots,
+    portFilter,
+    searchQuery,
+    hideStopped,
+  ]);
 
   const selectedShip: ShipSnapshot | null = useMemo(() => {
     if (!selectedMmsi) return null;
@@ -223,8 +237,11 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
               searchQuery={searchQuery}
               portFilter={portFilter}
               portOptions={portOptions}
+              hideStopped={hideStopped}
+              stoppedThresholdKnots={metrics.stoppedThresholdKnots ?? 0.6}
               onSearchChange={setSearchQuery}
               onPortChange={setPortFilter}
+              onToggleHideStopped={() => setHideStopped((v) => !v)}
             />
             <FleetTable
               ships={filteredShips}

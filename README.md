@@ -88,6 +88,7 @@ canary-maritime-monitor/
 - `INFLUXDB_URL`, `INFLUX_ORG`, `INFLUX_BUCKET`, `INFLUX_ADMIN_TOKEN`
 - `SPARK_OUTPUT_MODE` (`console`, `influx`, `both`)
 - `WEB_SPEED_ALERT_KNOTS`
+- `WEB_STOPPED_SOG_KNOTS` (umbral para ocultar buques parados en la UI)
 - (Web/Vercel) Protección opcional de endpoints:
   - `METRICS_API_KEY` para `/api/metrics`
   - `README_API_KEY` para `/api/readme`

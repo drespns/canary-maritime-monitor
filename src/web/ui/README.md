@@ -26,6 +26,7 @@ npm run lint
 - `INFLUX_ADMIN_TOKEN`
 - `INFLUX_MEASUREMENT`
 - `WEB_SPEED_ALERT_KNOTS`
+- `WEB_STOPPED_SOG_KNOTS` (umbral para ocultar buques parados)
 
 ## Endpoints protegibles (recomendado en Vercel)
 

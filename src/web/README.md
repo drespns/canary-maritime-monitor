@@ -25,6 +25,7 @@ Abrir: `http://localhost:3000`
 - `INFLUX_ADMIN_TOKEN`
 - `INFLUX_MEASUREMENT`
 - `WEB_SPEED_ALERT_KNOTS` (umbral de alerta visual en nudos)
+- `WEB_STOPPED_SOG_KNOTS` (umbral para ocultar buques parados en la UI)
 
 ## Endpoints protegibles (recomendado en Vercel)
 

@@ -55,6 +55,8 @@ export type PipelineMetrics = {
   avgSog: number;
   overspeedShips: number;
   speedAlertKnots: number;
+  /** Umbral para considerar un buque "parado" en UI (kn). */
+  stoppedThresholdKnots: number;
   windowMinutes: number;
   /** Límite efectivo aplicado al listado (10–200). */
   shipsLimit: number;
@@ -76,6 +78,7 @@ function asNumber(value: unknown): number | null {
 
 function emptyMetrics(
   speedAlertKnots: number,
+  stoppedThresholdKnots: number,
   shipsLimit: number,
   warning?: string
 ): PipelineMetrics {
@@ -84,6 +87,7 @@ function emptyMetrics(
     avgSog: 0,
     overspeedShips: 0,
     speedAlertKnots,
+    stoppedThresholdKnots,
     windowMinutes: 15,
     ships: [],
     shipTracks: [],
@@ -107,6 +111,7 @@ export async function getPipelineMetrics(limitOverride?: number): Promise<Pipeli
   const influxToken = process.env.INFLUX_ADMIN_TOKEN ?? "";
   const measurement = process.env.INFLUX_MEASUREMENT ?? "ships_positions";
   const speedAlertKnots = Number(process.env.WEB_SPEED_ALERT_KNOTS ?? "25");
+  const stoppedThresholdKnots = Number(process.env.WEB_STOPPED_SOG_KNOTS ?? "0.6");
   const trackPointsLimit = Number(process.env.WEB_TRACK_POINTS ?? "12");
   const fromEnv = clampShipsLimit(process.env.WEB_SHIPS_LIMIT ?? "60");
   const shipsLimit = limitOverride !== undefined ? clampShipsLimit(limitOverride) : fromEnv;
@@ -114,6 +119,7 @@ export async function getPipelineMetrics(limitOverride?: number): Promise<Pipeli
   if (!influxToken) {
     return emptyMetrics(
       speedAlertKnots,
+      Number.isFinite(stoppedThresholdKnots) ? stoppedThresholdKnots : 0.6,
       shipsLimit,
       "INFLUX_ADMIN_TOKEN no definido en entorno web."
     );
@@ -273,6 +279,7 @@ from(bucket: "${influxBucket}")
     avgSog,
     overspeedShips,
     speedAlertKnots,
+    stoppedThresholdKnots: Number.isFinite(stoppedThresholdKnots) ? stoppedThresholdKnots : 0.6,
     windowMinutes: 15,
     shipsLimit,
     ships,
