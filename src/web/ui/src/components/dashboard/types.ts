@@ -24,6 +24,7 @@ export type FleetTableProps = {
   totalShips: number;
   selectedMmsi: string | null;
   onShipSelect: (mmsi: string) => void;
+  onExpand?: () => void;
 };
 
 export type ShipDetailsProps = {

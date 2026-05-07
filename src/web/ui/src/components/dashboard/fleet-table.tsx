@@ -1,16 +1,34 @@
-﻿import type { FleetTableProps } from "@/components/dashboard/types";
+import type { FleetTableProps } from "@/components/dashboard/types";
 
 export default function FleetTable({
   ships,
   totalShips,
   selectedMmsi,
   onShipSelect,
+  onExpand,
 }: FleetTableProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/45 backdrop-blur-sm">
       <div className="border-b border-white/10 px-4 py-3">
-        <h2 className="text-sm font-semibold text-white">Flota filtrada</h2>
-        <p className="text-xs text-slate-400">{ships.length} de {totalShips} · clic en fila para detalle</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Flota filtrada</h2>
+            <p className="text-xs text-slate-400">
+              {ships.length} de {totalShips} · clic en fila para detalle
+            </p>
+          </div>
+          {onExpand ? (
+            <button
+              type="button"
+              onClick={onExpand}
+              className="rounded-md border border-white/15 bg-slate-950/40 px-2 py-1 text-xs text-slate-200 hover:bg-white/5"
+              title="Ampliar tabla"
+              aria-label="Ampliar tabla"
+            >
+              ⤢
+            </button>
+          ) : null}
+        </div>
       </div>
       <div className="max-h-[min(52vh,520px)] overflow-auto">
         <table className="min-w-full text-left text-xs sm:text-sm">

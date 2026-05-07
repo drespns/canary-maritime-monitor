@@ -12,6 +12,7 @@ import ProjectContextSection from "@/components/dashboard/project-context-sectio
 import DashboardFooter from "@/components/dashboard/dashboard-footer";
 import ReadmePreviewModal from "@/components/dashboard/readme-preview-modal";
 import DataDictionaryModal from "@/components/dashboard/data-dictionary-modal";
+import FleetTableModal from "@/components/dashboard/fleet-table-modal";
 import type { ShipSnapshot, ShipTrack } from "@/lib/pipeline-metrics";
 import type { LiveDashboardProps, MetricsResponse } from "@/components/dashboard/types";
 import { dashboardTheme } from "@/theme/dashboard-theme";
@@ -37,6 +38,7 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
   const [trackDepth, setTrackDepth] = useState(5);
   const [readmeModalOpen, setReadmeModalOpen] = useState(false);
   const [dictionaryModalOpen, setDictionaryModalOpen] = useState(false);
+  const [fleetModalOpen, setFleetModalOpen] = useState(false);
 
   const shipsLimitRef = useRef(shipsLimit);
 
@@ -176,6 +178,39 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
     setDictionaryModalOpen(true);
   }, []);
 
+  const visibleWithSog = useMemo(() => {
+    const threshold = Number.isFinite(metrics.stoppedThresholdKnots)
+      ? metrics.stoppedThresholdKnots
+      : 0.6;
+    return filteredShips
+      .filter((s) => s.sog !== null)
+      .filter((s) => (hideStopped ? (s.sog as number) >= threshold : true)) as Array<
+      ShipSnapshot & { sog: number }
+    >;
+  }, [filteredShips, hideStopped, metrics.stoppedThresholdKnots]);
+
+  const avgSogVisible = useMemo(() => {
+    if (visibleWithSog.length === 0) return 0;
+    return (
+      visibleWithSog.reduce((acc, s) => acc + s.sog, 0) / visibleWithSog.length
+    );
+  }, [visibleWithSog]);
+
+  const overspeedVisible = useMemo(() => {
+    const threshold = Number.isFinite(metrics.speedAlertKnots)
+      ? metrics.speedAlertKnots
+      : 25;
+    return visibleWithSog.filter((s) => s.sog >= threshold).length;
+  }, [visibleWithSog, metrics.speedAlertKnots]);
+
+  const stoppedHiddenCount = useMemo(() => {
+    if (!hideStopped) return 0;
+    const threshold = Number.isFinite(metrics.stoppedThresholdKnots)
+      ? metrics.stoppedThresholdKnots
+      : 0.6;
+    return metrics.ships.filter((s) => (s.sog ?? 0) < threshold).length;
+  }, [hideStopped, metrics.ships, metrics.stoppedThresholdKnots]);
+
   return (
     <main className={dashboardTheme.layout.page}>
       <div className={dashboardTheme.layout.bubbleLayer}>
@@ -192,11 +227,13 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
         />
 
         <KpiCards
-          activeShips={metrics.activeShips}
+          activeShips={filteredShips.length}
           windowMinutes={metrics.windowMinutes}
-          avgSog={metrics.avgSog}
-          overspeedShips={metrics.overspeedShips}
+          avgSog={avgSogVisible}
+          overspeedShips={overspeedVisible}
           speedAlertKnots={metrics.speedAlertKnots}
+          stoppedHiddenCount={stoppedHiddenCount}
+          stoppedThresholdKnots={metrics.stoppedThresholdKnots ?? 0.6}
         />
 
         {fetchError ? (
@@ -212,7 +249,7 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
         ) : null}
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-stretch">
-          <section className="flex flex-col gap-3 xl:col-span-4 xl:min-h-0">
+          <section className="flex flex-col gap-3 xl:col-span-5 xl:min-h-0">
             <div className="rounded-2xl border border-white/10 bg-slate-900/45 px-4 py-3 backdrop-blur-sm">
               <label className="flex flex-col gap-1 text-xs text-slate-300 sm:flex-row sm:items-center sm:justify-between">
                 <span className="font-medium text-slate-200">Buques en el panel (API)</span>
@@ -248,10 +285,11 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
               totalShips={metrics.ships.length}
               selectedMmsi={selectedMmsi}
               onShipSelect={onShipSelect}
+              onExpand={() => setFleetModalOpen(true)}
             />
           </section>
 
-          <section className="flex flex-col gap-3 xl:col-span-5">
+          <section className="flex flex-col gap-3 xl:col-span-4">
             <div className={`${dashboardTheme.card.base} p-4`}>
               <h2 className={`text-sm font-semibold ${dashboardTheme.text.title}`}>Mapa</h2>
               <p className={`text-xs ${dashboardTheme.text.muted}`}>
@@ -336,6 +374,14 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
       <DataDictionaryModal
         open={dictionaryModalOpen}
         onClose={() => setDictionaryModalOpen(false)}
+      />
+      <FleetTableModal
+        open={fleetModalOpen}
+        onClose={() => setFleetModalOpen(false)}
+        ships={filteredShips}
+        totalShips={metrics.ships.length}
+        selectedMmsi={selectedMmsi}
+        onShipSelect={onShipSelect}
       />
     </main>
   );
