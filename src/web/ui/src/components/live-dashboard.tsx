@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ShipMap from "@/components/ship-map";
 import HeroHeader from "@/components/dashboard/hero-header";
 import KpiCards from "@/components/dashboard/kpi-cards";
@@ -10,7 +10,9 @@ import ShipDetailsPanel from "@/components/dashboard/ship-details-panel";
 import RankingsPanel from "@/components/dashboard/rankings-panel";
 import ProjectContextSection from "@/components/dashboard/project-context-section";
 import DashboardFooter from "@/components/dashboard/dashboard-footer";
-import type { ShipSnapshot } from "@/lib/pipeline-metrics";
+import ReadmePreviewModal from "@/components/dashboard/readme-preview-modal";
+import DataDictionaryModal from "@/components/dashboard/data-dictionary-modal";
+import type { ShipSnapshot, ShipTrack } from "@/lib/pipeline-metrics";
 import type { LiveDashboardProps, MetricsResponse } from "@/components/dashboard/types";
 import { dashboardTheme } from "@/theme/dashboard-theme";
 
@@ -18,49 +20,59 @@ function normalize(s: string) {
   return s.trim().toLowerCase();
 }
 
+const SHIP_LIMIT_PRESETS = [40, 60, 100, 150, 200] as const;
+
 export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
   const [metrics, setMetrics] = useState<MetricsResponse>(initialMetrics);
+  const [shipsLimit, setShipsLimit] = useState(
+    initialMetrics.shipsLimit ?? SHIP_LIMIT_PRESETS[1]
+  );
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedMmsi, setSelectedMmsi] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [portFilter, setPortFilter] = useState<string>("__all__");
+  const [showTracks, setShowTracks] = useState(true);
+  const [trackDepth, setTrackDepth] = useState(5);
+  const [readmeModalOpen, setReadmeModalOpen] = useState(false);
+  const [dictionaryModalOpen, setDictionaryModalOpen] = useState(false);
+
+  const shipsLimitRef = useRef(shipsLimit);
+
+  useEffect(() => {
+    shipsLimitRef.current = shipsLimit;
+  }, [shipsLimit]);
+
+  const fetchMetricsWithLimit = useCallback(async (limit: number) => {
+    try {
+      const res = await fetch(`/api/metrics?limit=${limit}`, { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as MetricsResponse;
+      setMetrics(data);
+      setFetchError(null);
+    } catch (error) {
+      setFetchError(error instanceof Error ? error.message : "unknown");
+    }
+  }, []);
+
+  const onShipLimitChange = useCallback(
+    (next: number) => {
+      setShipsLimit(next);
+      void fetchMetricsWithLimit(next);
+    },
+    [fetchMetricsWithLimit]
+  );
 
   useEffect(() => {
     if (!autoRefresh) return;
-
-    let cancelled = false;
-
-    const refresh = async () => {
-      try {
-        setIsRefreshing(true);
-        const res = await fetch("/api/metrics", { cache: "no-store" });
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        const data = (await res.json()) as MetricsResponse;
-        if (!cancelled) {
-          setMetrics(data);
-          setFetchError(null);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setFetchError(error instanceof Error ? error.message : "unknown");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsRefreshing(false);
-        }
-      }
-    };
-
-    const interval = setInterval(refresh, 5000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [autoRefresh]);
+    const interval = setInterval(
+      () => void fetchMetricsWithLimit(shipsLimitRef.current),
+      5000
+    );
+    return () => clearInterval(interval);
+  }, [autoRefresh, fetchMetricsWithLimit]);
 
   const portOptions = useMemo(() => {
     const names = new Set<string>();
@@ -102,14 +114,53 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
     return [...byMmsi.values()];
   }, [filteredShips, selectedMmsi, metrics.ships]);
 
+  const tracksForMap = useMemo(() => {
+    const visibleMmsi = new Set(shipsForMap.map((s) => s.mmsi));
+    return metrics.shipTracks
+      .filter((t) => visibleMmsi.has(t.mmsi))
+      .map((t) => ({
+        ...t,
+        points: t.points.slice(-trackDepth),
+      })) as ShipTrack[];
+  }, [metrics.shipTracks, shipsForMap, trackDepth]);
+
+  const operatorLegend = useMemo(() => {
+    const byId = new Map<
+      string,
+      { id: string; label: string; color: string }
+    >();
+    for (const s of metrics.ships) {
+      if (!byId.has(s.operatorId)) {
+        byId.set(s.operatorId, {
+          id: s.operatorId,
+          label: s.operatorLabel,
+          color: s.operatorColor,
+        });
+      }
+    }
+    return [...byId.values()].sort((a, b) =>
+      a.label.localeCompare(b.label, "es")
+    );
+  }, [metrics.ships]);
+
+  const shipLimitOptions = useMemo(() => {
+    const set = new Set<number>(SHIP_LIMIT_PRESETS);
+    set.add(shipsLimit);
+    return [...set].sort((a, b) => a - b);
+  }, [shipsLimit]);
+
   const onShipSelect = useCallback((mmsi: string) => {
     setSelectedMmsi(mmsi);
   }, []);
-
-  const generatedAtLabel = useMemo(() => {
-    if (!metrics.generatedAt) return "-";
-    return new Date(metrics.generatedAt).toLocaleTimeString("es-ES");
-  }, [metrics.generatedAt]);
+  const onToggleAutoRefresh = useCallback(() => {
+    setAutoRefresh((v) => !v);
+  }, []);
+  const onOpenReadme = useCallback(() => {
+    setReadmeModalOpen(true);
+  }, []);
+  const onOpenDictionary = useCallback(() => {
+    setDictionaryModalOpen(true);
+  }, []);
 
   return (
     <main className={dashboardTheme.layout.page}>
@@ -120,10 +171,10 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
 
       <div className={dashboardTheme.layout.container}>
         <HeroHeader
-          generatedAtLabel={generatedAtLabel}
           autoRefresh={autoRefresh}
-          isRefreshing={isRefreshing}
-          onToggleAutoRefresh={() => setAutoRefresh((v) => !v)}
+          onToggleAutoRefresh={onToggleAutoRefresh}
+          onOpenReadme={onOpenReadme}
+          onOpenDictionary={onOpenDictionary}
         />
 
         <KpiCards
@@ -148,6 +199,26 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-stretch">
           <section className="flex flex-col gap-3 xl:col-span-4 xl:min-h-0">
+            <div className="rounded-2xl border border-white/10 bg-slate-900/45 px-4 py-3 backdrop-blur-sm">
+              <label className="flex flex-col gap-1 text-xs text-slate-300 sm:flex-row sm:items-center sm:justify-between">
+                <span className="font-medium text-slate-200">Buques en el panel (API)</span>
+                <select
+                  value={shipsLimit}
+                  onChange={(e) => onShipLimitChange(Number(e.target.value))}
+                  className="mt-1 w-full rounded-md border border-white/15 bg-slate-900 px-2 py-1.5 text-xs text-slate-100 sm:mt-0 sm:w-auto"
+                >
+                  {shipLimitOptions.map((n) => (
+                    <option key={n} value={n}>
+                      Hasta {n} buques
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="mt-2 text-[11px] leading-snug text-slate-500">
+                El backend recorta entre 10 y 200 MMSI tras filtrar nombres inválidos. Valores altos implican más
+                marcadores en Leaflet y más filas; suele ser fluido hasta ~150 en escritorio.
+              </p>
+            </div>
             <FleetFilters
               searchQuery={searchQuery}
               portFilter={portFilter}
@@ -169,11 +240,60 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
               <p className={`text-xs ${dashboardTheme.text.muted}`}>
                 Cada refresco reposiciona los puntos con la última posición conocida (sin animación continua entre lecturas).
               </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-slate-950/35 p-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTracks((v) => !v)}
+                  className={`rounded-md border px-2 py-1 text-xs transition ${
+                    showTracks
+                      ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-100"
+                      : "border-white/15 text-slate-300 hover:bg-white/10"
+                  }`}
+                >
+                  {showTracks ? "Estelas activas" : "Mostrar estelas"}
+                </button>
+                <label className="text-xs text-slate-300">
+                  Puntos por estela:
+                  <select
+                    value={trackDepth}
+                    onChange={(e) => setTrackDepth(Number(e.target.value))}
+                    className="ml-2 rounded-md border border-white/15 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+                    disabled={!showTracks}
+                  >
+                    <option value={3}>3</option>
+                    <option value={5}>5</option>
+                    <option value={8}>8</option>
+                    <option value={12}>12</option>
+                  </select>
+                </label>
+              </div>
+              {operatorLegend.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-1.5 rounded-lg border border-white/10 bg-slate-950/35 px-2 py-2">
+                  <span className="w-full text-[10px] uppercase tracking-wide text-slate-500">
+                    Color por operador (estimado)
+                  </span>
+                  {operatorLegend.map((o) => (
+                    <span
+                      key={o.id}
+                      className="inline-flex max-w-[140px] items-center gap-1 truncate rounded-full border border-white/10 bg-slate-900/80 px-2 py-0.5 text-[10px] text-slate-200"
+                      title={o.label}
+                    >
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: o.color }}
+                      />
+                      <span className="truncate">{o.label}</span>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               <div className="mt-3">
                 <ShipMap
                   ships={shipsForMap}
+                  tracks={showTracks ? tracksForMap : []}
                   selectedMmsi={selectedMmsi}
                   onShipSelect={onShipSelect}
+                  speedAlertKnots={metrics.speedAlertKnots}
                 />
               </div>
             </div>
@@ -195,6 +315,11 @@ export default function LiveDashboard({ initialMetrics }: LiveDashboardProps) {
         <ProjectContextSection />
         <DashboardFooter />
       </div>
+      <ReadmePreviewModal open={readmeModalOpen} onClose={() => setReadmeModalOpen(false)} />
+      <DataDictionaryModal
+        open={dictionaryModalOpen}
+        onClose={() => setDictionaryModalOpen(false)}
+      />
     </main>
   );
 }

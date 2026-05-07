@@ -34,9 +34,14 @@ export default function RankingsPanel({
               <button
                 type="button"
                 onClick={() => onShipSelect(s.mmsi)}
-                className="truncate text-left text-cyan-200 underline-offset-2 hover:underline"
+                className="flex min-w-0 flex-1 items-center gap-2 truncate text-left text-cyan-200 underline-offset-2 hover:underline"
               >
-                {s.shipName}
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-white/15"
+                  style={{ backgroundColor: s.operatorColor }}
+                  title={s.operatorLabel}
+                />
+                <span className="truncate">{s.shipName}</span>
               </button>
               <span className="shrink-0 text-slate-200">{s.sog.toFixed(1)} kn</span>
             </li>

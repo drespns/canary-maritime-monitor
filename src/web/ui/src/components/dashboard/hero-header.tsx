@@ -1,18 +1,30 @@
 ﻿import { dashboardTheme } from "@/theme/dashboard-theme";
+import { memo, useEffect, useState } from "react";
 
 type Props = {
-  generatedAtLabel: string;
   autoRefresh: boolean;
-  isRefreshing: boolean;
   onToggleAutoRefresh: () => void;
+  onOpenReadme: () => void;
+  onOpenDictionary: () => void;
 };
 
-export default function HeroHeader({
-  generatedAtLabel,
+function HeroHeader({
   autoRefresh,
-  isRefreshing,
   onToggleAutoRefresh,
+  onOpenReadme,
+  onOpenDictionary,
 }: Props) {
+  const [clockLabel, setClockLabel] = useState(() =>
+    new Date().toLocaleTimeString("es-ES")
+  );
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setClockLabel(new Date().toLocaleTimeString("es-ES"));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   return (
     <header className={`${dashboardTheme.card.base} relative overflow-hidden bg-slate-950/70 p-6 shadow-[0_20px_60px_-30px_rgba(34,211,238,0.35)]`}>
       <div className="pointer-events-none absolute -top-16 right-10 h-56 w-56 rounded-full bg-cyan-500/12 blur-3xl" />
@@ -34,12 +46,11 @@ export default function HeroHeader({
 
         <div className="min-w-[220px] rounded-xl border border-white/15 bg-slate-900/70 p-3 text-xs text-slate-200 shadow-inner">
           <p>
-            <span className="font-semibold text-cyan-200">Última lectura:</span> {generatedAtLabel}
+            <span className="font-semibold text-cyan-200">Última lectura:</span> {clockLabel}
           </p>
           <p className="mt-1">
             <span className="font-semibold text-cyan-200">Auto-actualización:</span>{" "}
             {autoRefresh ? "activa" : "pausada"}
-            {isRefreshing ? " · sincronizando..." : ""}
           </p>
           <button
             type="button"
@@ -48,8 +59,26 @@ export default function HeroHeader({
           >
             {autoRefresh ? "Pausar actualización" : "Reanudar"}
           </button>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onOpenReadme}
+              className="rounded-md border border-cyan-400/30 bg-gradient-to-r from-cyan-600/30 to-blue-600/30 px-2 py-1 text-[11px] font-semibold text-cyan-100 shadow-[0_6px_20px_-10px_rgba(34,211,238,0.7)] transition hover:from-cyan-500/40 hover:to-blue-500/40"
+            >
+              Ver README
+            </button>
+            <button
+              type="button"
+              onClick={onOpenDictionary}
+              className="rounded-md border border-violet-400/30 bg-gradient-to-r from-violet-600/30 to-fuchsia-600/30 px-2 py-1 text-[11px] font-semibold text-violet-100 shadow-[0_6px_20px_-10px_rgba(168,85,247,0.7)] transition hover:from-violet-500/40 hover:to-fuchsia-500/40"
+            >
+              Glosario de datos
+            </button>
+          </div>
         </div>
       </div>
     </header>
   );
 }
+
+export default memo(HeroHeader);

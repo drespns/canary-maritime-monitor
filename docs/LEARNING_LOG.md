@@ -1,6 +1,6 @@
 # Diario de aprendizaje
 
-Úsalo para anclar lo que aprendes al hacer el proyecto (útil en entrevistas y revisiones).
+Úsalo para anclar lo que aprendes al hacer el proyecto (útil para revisiones y retrospectivas).
 
 ---
 

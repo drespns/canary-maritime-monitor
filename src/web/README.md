@@ -26,6 +26,18 @@ Abrir: `http://localhost:3000`
 - `INFLUX_MEASUREMENT`
 - `WEB_SPEED_ALERT_KNOTS` (umbral de alerta visual en nudos)
 
+## Endpoints protegibles (recomendado en Vercel)
+
+Los endpoints API pueden protegerse con una API key por entorno. Si defines la variable, el endpoint exige:
+
+- Header `Authorization: Bearer <API_KEY>`
+
+Variables disponibles:
+
+- `METRICS_API_KEY` (protege `/api/metrics`)
+- `README_API_KEY` (protege `/api/readme`)
+- `HEALTH_API_KEY` (protege `/api/health`)
+
 ## Nota sobre puertos
 
 - Grafana usa `localhost:3000` en Docker.
@@ -34,3 +46,20 @@ Abrir: `http://localhost:3000`
 ```powershell
 npm run dev -- -p 3001
 ```
+
+## Deploy rápido (Vercel + InfluxDB Cloud)
+
+1. **InfluxDB Cloud**
+   - Crea/elige: **Organization** y **Bucket** (ej. `ship-metrics`).
+   - Crea un API token con permisos mínimos:
+     - **Read** del bucket (para la web)
+     - **Write** solo si también vas a usar el token para ingesta (no recomendado; mejor un token distinto)
+   - Copia: `INFLUXDB_URL`, `INFLUX_ORG`, `INFLUX_BUCKET`, `INFLUX_ADMIN_TOKEN` (token), `INFLUX_MEASUREMENT`.
+
+2. **Vercel**
+   - Importa el repo.
+   - Configura **Root Directory**: `src/web/ui`.
+   - Añade variables de entorno (Production):
+     - `INFLUXDB_URL`, `INFLUX_ORG`, `INFLUX_BUCKET`, `INFLUX_ADMIN_TOKEN`, `INFLUX_MEASUREMENT`
+     - opcional: `METRICS_API_KEY`, `README_API_KEY`, `HEALTH_API_KEY`
+   - Deploy.

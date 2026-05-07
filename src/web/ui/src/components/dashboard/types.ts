@@ -1,4 +1,4 @@
-﻿import type { PipelineMetrics, ShipSnapshot } from "@/lib/pipeline-metrics";
+﻿import type { FastestShipEntry, PipelineMetrics, ShipSnapshot } from "@/lib/pipeline-metrics";
 
 export type MetricsResponse = PipelineMetrics & {
   generatedAt?: string;
@@ -30,6 +30,6 @@ export type ShipDetailsProps = {
 
 export type RankingsProps = {
   topPorts: Array<{ name: string; vessels: number }>;
-  fastestShips: Array<{ mmsi: string; shipName: string; sog: number }>;
+  fastestShips: FastestShipEntry[];
   onShipSelect: (mmsi: string) => void;
 };

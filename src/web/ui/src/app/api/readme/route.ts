@@ -1,31 +1,29 @@
 import { NextResponse } from "next/server";
-import { getPipelineMetrics } from "@/lib/pipeline-metrics";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const expectedKey = process.env.METRICS_API_KEY;
+    const expectedKey = process.env.README_API_KEY;
     if (expectedKey) {
       const auth = request.headers.get("authorization") ?? "";
-      const provided = auth.startsWith("Bearer ") ? auth.slice("Bearer ".length) : "";
+      const provided = auth.startsWith("Bearer ")
+        ? auth.slice("Bearer ".length)
+        : "";
       if (!provided || provided !== expectedKey) {
         return NextResponse.json({ error: "unauthorized" }, { status: 401 });
       }
     }
 
-    const { searchParams } = new URL(request.url);
-    const limitRaw = searchParams.get("limit");
-    const limit =
-      limitRaw !== null && limitRaw !== "" ? Number(limitRaw) : undefined;
-    const metrics = await getPipelineMetrics(
-      limit !== undefined && Number.isFinite(limit) ? limit : undefined
-    );
+    const readmePath = path.resolve(process.cwd(), "..", "..", "..", "README.md");
+    const markdown = await readFile(readmePath, "utf8");
     return NextResponse.json(
       {
-        ...metrics,
-        generatedAt: new Date().toISOString(),
+        markdown,
+        loadedAt: new Date().toISOString(),
       },
       {
         headers: {
@@ -36,7 +34,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: "metrics_unavailable",
+        error: "readme_unavailable",
         detail:
           process.env.NODE_ENV === "production"
             ? "unavailable"
@@ -48,3 +46,4 @@ export async function GET(request: Request) {
     );
   }
 }
+

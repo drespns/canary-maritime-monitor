@@ -10,12 +10,27 @@ type ShipPoint = {
   latitude: number | null;
   longitude: number | null;
   nearestPortName: string;
+  operatorColor: string;
+  operatorLabel: string;
+};
+
+type ShipTrack = {
+  mmsi: string;
+  points: Array<{
+    latitude: number;
+    longitude: number;
+    seenAt: string;
+    sog: number | null;
+  }>;
+  operatorColor: string;
 };
 
 type Props = {
   ships: ShipPoint[];
+  tracks?: ShipTrack[];
   selectedMmsi?: string | null;
   onShipSelect?: (mmsi: string) => void;
+  speedAlertKnots?: number;
 };
 
 const CANARY_CENTER: [number, number] = [28.3, -15.8];
@@ -24,7 +39,13 @@ const CANARY_CENTER: [number, number] = [28.3, -15.8];
  * Leaflet solo existe en el navegador: import dinámico en el efecto
  * para que la evaluación del módulo en SSR no toque `window`.
  */
-export default function ShipMap({ ships, selectedMmsi, onShipSelect }: Props) {
+export default function ShipMap({
+  ships,
+  tracks = [],
+  selectedMmsi,
+  onShipSelect,
+  speedAlertKnots = 25,
+}: Props) {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<LeafletMap | null>(null);
   const layerGroupRef = useRef<LayerGroup | null>(null);
@@ -79,32 +100,50 @@ export default function ShipMap({ ships, selectedMmsi, onShipSelect }: Props) {
 
     group.clearLayers();
 
+    for (const track of tracks) {
+      if (track.points.length < 2) continue;
+      const isSelectedTrack = selectedMmsi === track.mmsi;
+      const latestSog = track.points.at(-1)?.sog ?? 0;
+      const strokeColor = track.operatorColor;
+      const overspeed = latestSog >= speedAlertKnots;
+      const polyline = L.polyline(
+        track.points.map((p) => [p.latitude, p.longitude] as [number, number]),
+        {
+          color: strokeColor,
+          opacity: isSelectedTrack ? 0.88 : overspeed ? 0.55 : 0.4,
+          weight: isSelectedTrack ? 4 : overspeed ? 3 : 2,
+          lineCap: "round",
+          lineJoin: "round",
+          dashArray: isSelectedTrack ? undefined : "4 6",
+        }
+      );
+      polyline.addTo(group);
+    }
+
     for (const ship of validShips) {
       const speed = ship.sog ?? 0;
       const isSelected = selectedMmsi === ship.mmsi;
-      const color = speed >= 25 ? "#ef4444" : speed >= 15 ? "#f59e0b" : "#10b981";
-      const radius = isSelected
-        ? speed >= 25
-          ? 9
-          : speed >= 15
-            ? 8
-            : 7
-        : speed >= 25
-          ? 7
-          : speed >= 15
-            ? 6
-            : 5;
+      const fill = ship.operatorColor || "#64748b";
+      const overspeed = speed >= speedAlertKnots;
+      const midSpeed = speed >= speedAlertKnots * 0.6;
+      const radius = isSelected ? (overspeed ? 10 : midSpeed ? 9 : 8) : overspeed ? 8 : midSpeed ? 7 : 6;
+      const borderColor = overspeed
+        ? "#fecaca"
+        : isSelected
+          ? "#ffffff"
+          : "rgba(15,23,42,0.55)";
 
       const marker = L.circleMarker([ship.latitude, ship.longitude], {
         radius,
-        color: isSelected ? "#ffffff" : color,
-        fillColor: color,
-        fillOpacity: isSelected ? 0.95 : 0.8,
-        weight: isSelected ? 3 : 2,
+        color: borderColor,
+        fillColor: fill,
+        fillOpacity: isSelected ? 0.95 : 0.88,
+        weight: overspeed ? 3 : isSelected ? 3 : 2,
       });
       marker.bindPopup(`
         <div style="font-size:12px">
           <div><strong>${ship.shipName || "N/A"}</strong></div>
+          <div style="opacity:.9">${ship.operatorLabel ?? ""}</div>
           <div>MMSI: ${ship.mmsi}</div>
           <div>SOG: ${ship.sog !== null ? ship.sog.toFixed(2) + " kn" : "N/A"}</div>
           <div>Puerto cercano: ${ship.nearestPortName}</div>
@@ -115,7 +154,7 @@ export default function ShipMap({ ships, selectedMmsi, onShipSelect }: Props) {
       });
       marker.addTo(group);
     }
-  }, [mapReady, validShips, selectedMmsi]);
+  }, [mapReady, validShips, tracks, selectedMmsi, speedAlertKnots]);
 
   useEffect(() => {
     if (!mapReady || !selectedMmsi) return;

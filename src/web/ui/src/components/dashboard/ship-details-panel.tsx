@@ -1,4 +1,5 @@
 ﻿import type { ShipDetailsProps } from "@/components/dashboard/types";
+import OperatorLogo from "@/components/dashboard/operator-logo";
 
 export default function ShipDetailsPanel({
   selectedShip,
@@ -15,6 +16,22 @@ export default function ShipDetailsPanel({
 
       {selectedShip ? (
         <dl className="mt-3 space-y-2 text-sm">
+          <div>
+            <dt className="text-xs uppercase text-slate-500">Operador (estimado)</dt>
+            <dd className="flex items-center gap-2 text-slate-100">
+              <OperatorLogo
+                logoSlug={selectedShip.operatorLogoSlug}
+                label={selectedShip.operatorLabel}
+                className="h-8 w-8"
+              />
+              <span
+                className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-slate-950/40 px-2 py-1 text-xs"
+                style={{ borderLeftColor: selectedShip.operatorColor, borderLeftWidth: 3 }}
+              >
+                {selectedShip.operatorLabel}
+              </span>
+            </dd>
+          </div>
           <div>
             <dt className="text-xs uppercase text-slate-500">Nombre</dt>
             <dd className="font-medium text-white">{selectedShip.shipName}</dd>

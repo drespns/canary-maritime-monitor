@@ -18,6 +18,7 @@ export default function FleetTable({
             <tr className="border-b border-white/10">
               <th className="px-3 py-2">MMSI</th>
               <th className="px-3 py-2">Buque</th>
+              <th className="hidden sm:table-cell px-3 py-2">Operador</th>
               <th className="px-3 py-2">SOG</th>
               <th className="hidden lg:table-cell px-3 py-2">Puerto</th>
             </tr>
@@ -42,7 +43,19 @@ export default function FleetTable({
                   }`}
                 >
                   <td className="px-3 py-2 font-mono text-[11px] text-slate-200">{ship.mmsi}</td>
-                  <td className="max-w-[140px] truncate px-3 py-2 text-slate-100">{ship.shipName}</td>
+                  <td className="max-w-[120px] truncate px-3 py-2 font-medium text-slate-100">{ship.shipName}</td>
+                  <td className="hidden max-w-[100px] truncate px-3 py-2 sm:table-cell">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-white/20"
+                        style={{ backgroundColor: ship.operatorColor }}
+                        title={ship.operatorLabel}
+                      />
+                      <span className="truncate text-slate-300" title={ship.operatorLabel}>
+                        {ship.operatorLabel}
+                      </span>
+                    </span>
+                  </td>
                   <td className="px-3 py-2 text-slate-200">{ship.sog !== null ? `${ship.sog.toFixed(1)}` : "-"}</td>
                   <td className="hidden max-w-[120px] truncate px-3 py-2 text-slate-400 lg:table-cell">{ship.nearestPortName}</td>
                 </tr>
@@ -50,7 +63,7 @@ export default function FleetTable({
             })}
             {ships.length === 0 ? (
               <tr>
-                <td className="px-3 py-6 text-slate-500" colSpan={4}>
+                <td className="px-3 py-6 text-slate-500" colSpan={5}>
                   Sin coincidencias. Ajusta filtros o espera a que lleguen datos.
                 </td>
               </tr>

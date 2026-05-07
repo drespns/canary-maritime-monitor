@@ -31,6 +31,38 @@
           </ul>
         </article>
       </div>
+
+      <div className="mt-4 rounded-xl border border-cyan-500/20 bg-cyan-950/10 p-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-cyan-200">
+          Ideas de evolución (inspiradas en revisión externa)
+        </h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <article className="rounded-lg border border-white/10 bg-slate-900/45 p-3">
+            <h4 className="text-sm font-semibold text-white">Business Intelligence Marítimo</h4>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-300">
+              <li>ETA dinámico con distancia y SOG.</li>
+              <li>Eventos de entrada/salida de puerto por radio virtual.</li>
+              <li>Clasificación Stationary vs Under Way.</li>
+            </ul>
+          </article>
+          <article className="rounded-lg border border-white/10 bg-slate-900/45 p-3">
+            <h4 className="text-sm font-semibold text-white">Observabilidad del dato</h4>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-300">
+              <li>Latencia extremo a extremo (sensor a dashboard).</li>
+              <li>DLQ para mensajes inválidos o coordenadas imposibles.</li>
+              <li>Panel de salud de producer y job Spark.</li>
+            </ul>
+          </article>
+          <article className="rounded-lg border border-white/10 bg-slate-900/45 p-3">
+            <h4 className="text-sm font-semibold text-white">Factor Wow en dashboard</h4>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-300">
+              <li>Estelas/heatmap con últimos puntos de posición.</li>
+              <li>Alertas por zonas de velocidad crítica.</li>
+              <li>Comparativa de velocidad media por flota activa.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
     </section>
   );
 }
